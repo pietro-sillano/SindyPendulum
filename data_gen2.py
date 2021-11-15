@@ -63,7 +63,7 @@ if __name__ == "__main__":
     #COSTANTI e PARAMETRI
     #n_ics = 100
     ta = 0.
-    tb = 5.
+    tb = 10.
     dt = 0.025 
     NX = 51
     NY = 51
