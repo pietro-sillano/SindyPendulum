@@ -33,7 +33,7 @@ def initial_conditions(n_ics):
 def data_gen(ics,t):
     data = np.empty([ics.shape[0], len(t), 3])
     for idx in range(ics.shape[0]):
-        if(idx%10==0): print(idx,' su ', len(ics))
+        if(idx%100==0): print(idx,' su ', len(ics))
         y0 = [ics[idx][0], ics[idx][1], ics[idx][2]]
 
         sol = odeint(lorentz, y0,t)
