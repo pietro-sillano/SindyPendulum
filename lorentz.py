@@ -86,5 +86,5 @@ if __name__ == "__main__":
         np.save(f, X)
 
     with open('Xdot.npy', 'wb') as f2:
-        np.save(f, Xdot)
+        np.save(f2, Xdot)
 
