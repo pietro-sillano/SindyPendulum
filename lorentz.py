@@ -34,8 +34,7 @@ def data_gen(ics,t):
     data = np.empty([ics.shape[0], len(t), 3])
     for idx in range(ics.shape[0]):
         if(idx%10==0): print(idx,' su ', len(ics))
-        #y0 = [ics[idx][0], ics[idx][1], ics[idx][2]]
-        y0 = [ics[0][idx], ics[1][idx], ics[2][idx]]
+        y0 = [ics[idx][0], ics[idx][1], ics[idx][2]]
 
         sol = odeint(lorentz, y0,t)
         data[idx] = sol
@@ -76,8 +75,8 @@ if __name__ == "__main__":
     ics = initial_conditions(n_ics)
 
     ta = 0.
-    tb = 10.
-    dt = 0.01 
+    tb = 5
+    dt = 0.02
     t = np.arange(ta, tb ,dt)
 
     X = data_gen(ics,t)
