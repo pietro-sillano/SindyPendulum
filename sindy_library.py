@@ -139,13 +139,7 @@ class SINDyLibrary():
 
 
     def transform(self, z):
-      #theta = [cand_func(z) for cand_func in self.candidate_functions]
-      temp = []
-      for cand_func in self.candidate_functions:
-        theta = cand_func(z)
-        print('z',z.shape)
-        print('theta',theta.shape)
-        temp.append(theta)
+      theta = [cand_func(z) for cand_func in self.candidate_functions]
       out =  torch.cat(theta, axis=1)
       return out
 
