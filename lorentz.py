@@ -20,10 +20,13 @@ def lorentz(X, t):
     return dx_dt, dy_dt, dz_dt
 
 def initial_conditions(n_ics):
-    x0 = np.random.uniform(0.1,1,n_ics)
-    y0 = np.random.uniform(0.1,1,n_ics)
-    z0 = np.random.uniform(0.1,1,n_ics)
-    ics = np.stack((x0,y0,z0),axis = -1)
+    #x0 = np.random.uniform(0.1,1,n_ics)
+    #y0 = np.random.uniform(0.1,1,n_ics)
+    #z0 = np.random.uniform(0.1,1,n_ics)
+    
+    ic_means = np.array([0,0,25])
+    ic_widths = 2*np.array([36,48,41])
+    ics = ic_widths*(np.random.rand(n_ics, 3)-.5) + ic_means    
     return ics
 
 
@@ -31,7 +34,9 @@ def data_gen(ics,t):
     data = np.empty([ics.shape[0], len(t), 3])
     for idx in range(ics.shape[0]):
         if(idx%10==0): print(idx,' su ', len(ics))
-        y0 = [ics[idx][0], ics[idx][1], ics[idx][2]]
+        #y0 = [ics[idx][0], ics[idx][1], ics[idx][2]]
+        y0 = [ics[0][idx], ics[1][idx], ics[2][idx]]
+
         sol = odeint(lorentz, y0,t)
         data[idx] = sol
     return data
