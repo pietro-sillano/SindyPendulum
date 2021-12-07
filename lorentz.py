@@ -84,7 +84,12 @@ if __name__ == "__main__":
 
     #x,y,z = unpacking(X)
     #xdot,ydot,zdot = unpacking(Xdot)
-
+    
+    X = X.reshape((len(ics) * len(t),3))
+    print(X.shape)
+    
+    Xdot = Xdot.reshape((len(ics) * len(t),3))
+    print(Xdot.shape)
 
     with open('X.npy', 'wb') as f:
         np.save(f, X)
