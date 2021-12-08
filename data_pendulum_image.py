@@ -90,6 +90,8 @@ if __name__ == "__main__":
 #questo reshape serve per mandare al autoencoder delle immagini flat
 #TODO verifica che sia corretto questo rehsape --> dovrebb essere ok fatto prova su colab
     data = data.reshape((len(ics) * len(t),NX * NY))
+    data2 = data2.reshape((len(ics) * len(t),NX * NY))
+
     print(data.shape)
     print("condizioni iniziali valide: ",len(ics))
 
