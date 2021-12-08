@@ -33,6 +33,8 @@ def image_gen(ics):
     xx,yy = np.meshgrid(x, y)
 
     data = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.uint8)
+    data2 = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.uint8)
+
     #data = np.empty([len(ics), len(t), len(x), len(y)])
 
     for idx in range(len(ics)):
@@ -50,7 +52,15 @@ def image_gen(ics):
             temp.append(z)
         data[idx] = np.array(temp)
         
-    return data
+        temp = []
+        for i in range(len(omega)):
+            z = np.exp(- 20 *((xx - np.cos(omega[i] + np.pi/2))*(xx - 
+                np.cos(omega[i] +np.pi/2))) - 20 * ((yy -np.sin(omega[i]+np.pi/2))*(yy -np.sin(omega[i]+np.pi/2))))
+            z = ((z - np.min(z))/(np.max(z)-np.min(z))) * 255
+            temp.append(z)
+        data2[idx] = np.array(temp)
+        
+    return data,data2
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -74,7 +84,8 @@ if __name__ == "__main__":
     omega0 = np.linspace(-2.1, 2.1,n_ics)
 
     ics = select_ics(theta0,omega0)
-    data = image_gen(ics)
+    data,data2 = image_gen(ics)
+
 
 #questo reshape serve per mandare al autoencoder delle immagini flat
 #TODO verifica che sia corretto questo rehsape --> dovrebb essere ok fatto prova su colab
@@ -82,9 +93,9 @@ if __name__ == "__main__":
     print(data.shape)
     print("condizioni iniziali valide: ",len(ics))
 
-    #SCALING TO 0-255 AND CONVERTING TO UINT8
-    #data = ((data - np.min(data))/(np.max(data)-np.min(data))) * 255
-    #data = np.uint8(data)
-    with open('data.npy', 'wb') as f:
+
+    with open('X.npy', 'wb') as f:
         np.save(f, data)
+    with open('Xdot.npy', 'wb') as f2:
+        np.save(f2, data2)
 
