@@ -137,7 +137,9 @@ class SINDyLibrary():
                      for idx1, idx2 in self.idx_combis_commutative]
             self.feature_names.extend(names)
 
-
+    def get_feature_names(self,):
+        return self.feature_names
+    
     def transform(self, z):
       theta = [cand_func(z) for cand_func in self.candidate_functions]
       out =  torch.cat(theta, axis=1)
