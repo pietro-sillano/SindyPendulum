@@ -1,6 +1,6 @@
 import itertools
 import numpy as np
-class SINDyLibraryNumpy():
+class SINDyNew():
     def __init__(self,
                  latent_dim=3,
                  include_biases=True,
@@ -10,7 +10,7 @@ class SINDyLibraryNumpy():
                  include_multiply_pairs=True,
                  poly_order=2,
                  include_sqrt=True,
-                 include_inverse=True,
+                 include_inverse=False,
                  include_sign_sqrt_of_diff=True,):
 
         self.candidate_functions = []
@@ -34,7 +34,7 @@ class SINDyLibraryNumpy():
         
 
     def biases(self, z):
-        return np.ones(z.shape[0], 1)
+        return np.ones(z.shape[0])
 
     @staticmethod
     def states(z):
@@ -54,7 +54,7 @@ class SINDyLibraryNumpy():
             res = z[:, idx1] * z[:, idx2]
             res = res.reshape(-1, 1)
             result.append(res)
-        return np.cat(result, axis=1)
+        return np.concatenate(result, axis=1)
 
     @staticmethod
     def inverse(z):
@@ -68,7 +68,7 @@ class SINDyLibraryNumpy():
                     res = z[:,i]*z[:,j]*z[:,k]
                     res = res.reshape(-1, 1)
                     result.append(res)
-        return np.cat(result, axis=1)
+        return np.concatenate(result, axis=1)
 
     @staticmethod
     def sqrt(z):
@@ -80,7 +80,7 @@ class SINDyLibraryNumpy():
             res = np.sign(z[:, idx1] - z[:,idx2])*np.sqrt(np.abs(z[:, idx1] - z[:,idx2]))
             res = res.reshape(-1, 1)
             result.append(res)
-        return np.cat(result, axis=1)
+        return np.concatenate(result, axis=1)
 
 
 
@@ -139,12 +139,12 @@ class SINDyLibraryNumpy():
     
     def transform(self, z):
       theta = [cand_func(z) for cand_func in self.candidate_functions]
-      out =  np.cat(theta, axis=1)
+      out =  np.concatenate(theta,axis=0)
       return out
 
 if __name__ == '__main__':
     # some test for the SINDy lib
     import numpy as np
-    z = np.tensor([[1, 2, 3], [4, 0, 6]])
+    z = np.array([[1, 2, 3], [4, 0, 6]])
     sl = SINDyLibraryNumpy()
     theta = sl.transform(z)
