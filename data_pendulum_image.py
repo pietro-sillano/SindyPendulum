@@ -50,7 +50,9 @@ def image_gen(ics):
         for i in range(len(theta)):
             z = np.exp(- 20 *((xx - np.cos(theta[i] + np.pi/2))*(xx - 
                 np.cos(theta[i] +np.pi/2))) - 20 * ((yy -np.sin(theta[i]+np.pi/2))*(yy -np.sin(theta[i]+np.pi/2))))
-            z = ((z - np.min(z))/(np.max(z)-np.min(z))) * 255
+            #z = ((z - np.min(z))/(np.max(z)-np.min(z))) * 255
+            z = ((z - np.min(z))/(np.max(z)-np.min(z)))
+
             temp.append(z)
         data[idx] = np.array(temp)
         
