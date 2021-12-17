@@ -146,5 +146,5 @@ if __name__ == '__main__':
     # some test for the SINDy lib
     import numpy as np
     z = np.tensor([[1, 2, 3], [4, 0, 6]])
-    sl = SINDyLibrary()
+    sl = SINDyLibraryNumpy()
     theta = sl.transform(z)
