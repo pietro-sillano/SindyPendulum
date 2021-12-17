@@ -1,6 +1,6 @@
 import itertools
 import numpy as np
-class SINDyLibrary():
+class SINDyLibraryNumpy():
     def __init__(self,
                  latent_dim=3,
                  include_biases=True,
