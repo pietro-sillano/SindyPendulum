@@ -34,7 +34,7 @@ class SINDyNew():
         
 
     def biases(self, z):
-        return np.ones(z.shape[0])
+        return np.ones((z.shape[0],1))
 
     @staticmethod
     def states(z):
@@ -139,12 +139,15 @@ class SINDyNew():
     
     def transform(self, z):
       theta = [cand_func(z) for cand_func in self.candidate_functions]
-      out =  np.concatenate(theta,axis=0)
+      out =  np.concatenate(theta,axis=1)
       return out
 
 if __name__ == '__main__':
     # some test for the SINDy lib
     import numpy as np
     z = np.array([[1, 2, 3], [4, 0, 6]])
-    sl = SINDyLibraryNumpy()
+    sl = SINDyNew()
     theta = sl.transform(z)
+    print(sl.get_feature_names())
+    print(theta.shape)
+    print(theta)
