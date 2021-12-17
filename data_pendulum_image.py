@@ -32,8 +32,10 @@ def image_gen(ics):
     y = np.linspace(-1.5, 1.5, NY)
     xx,yy = np.meshgrid(x, y)
 
-    data = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.uint8)
-    data2 = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.uint8)
+    #data = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.uint8)
+    #data2 = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.uint8)
+    data = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.float32)
+    data2 = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.float32)
 
     #data = np.empty([len(ics), len(t), len(x), len(y)])
 
@@ -56,7 +58,9 @@ def image_gen(ics):
         for i in range(len(omega)):
             z = np.exp(- 20 *((xx - np.cos(omega[i] + np.pi/2))*(xx - 
                 np.cos(omega[i] +np.pi/2))) - 20 * ((yy -np.sin(omega[i]+np.pi/2))*(yy -np.sin(omega[i]+np.pi/2))))
-            z = ((z - np.min(z))/(np.max(z)-np.min(z))) * 255
+            #z = ((z - np.min(z))/(np.max(z)-np.min(z))) * 255
+            z = ((z - np.min(z))/(np.max(z)-np.min(z)))
+
             temp.append(z)
         data2[idx] = np.array(temp)
         
