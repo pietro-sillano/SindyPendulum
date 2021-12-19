@@ -6,13 +6,13 @@ class SINDyLibrary():
                  latent_dim=3,
                  include_biases=True,
                  include_states=True,
-                 include_sin=True,
+                 include_sin=False,
                  include_cos=True,
-                 include_multiply_pairs=True,
+                 include_multiply_pairs=False,
                  poly_order=2,
                  include_sqrt=True,
                  include_inverse=True,
-                 include_sign_sqrt_of_diff=True,
+                 include_sign_sqrt_of_diff=False,
                  device='cuda:0'):
 
         self.device = device
@@ -67,8 +67,7 @@ class SINDyLibrary():
         result = []
         for i in range(self.latent_dim):
             for j in range(i, self.latent_dim):
-                for k in range(j, self.latent_dim):
-                    res = z[:,i]*z[:,j]*z[:,k]
+                    res = z[:,i]*z[:,j]
                     res = res.reshape(-1, 1)
                     result.append(res)
         return torch.cat(result, axis=1)
@@ -124,8 +123,7 @@ class SINDyLibrary():
             names = []
             for i in range(self.latent_dim):
                 for j in range(i, self.latent_dim):
-                    for k in range(j, self.latent_dim):
-                        names.append(f'z{i}*z{j}*z{k}')
+                        names.append(f'z{i}*z{j}')
             self.feature_names.extend(names)
         if self.include_sqrt:
             self.candidate_functions.append(self.sqrt)

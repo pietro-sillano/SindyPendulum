@@ -64,12 +64,11 @@ class SINDyNew():
         result = []
         for i in range(self.latent_dim):
             for j in range(i, self.latent_dim):
-                for k in range(j, self.latent_dim):
-                    res = z[:,i]*z[:,j]*z[:,k]
-                    res = res.reshape(-1, 1)
-                    result.append(res)
+                res = z[:,i]*z[:,j]
+                res = res.reshape(-1, 1)
+                result.append(res)
         return np.concatenate(result, axis=1)
-
+    
     @staticmethod
     def sqrt(z):
         return np.sqrt(z)
@@ -121,8 +120,10 @@ class SINDyNew():
             names = []
             for i in range(self.latent_dim):
                 for j in range(i, self.latent_dim):
-                    for k in range(j, self.latent_dim):
-                        names.append(f'z{i}*z{j}*z{k}')
+#                    for k in range(j, self.latent_dim):
+                        #names.append(f'z{i}*z{j}*z{k}')
+                        names.append(f'z{i}*z{j}')
+
             self.feature_names.extend(names)
         if self.include_sqrt:
             self.candidate_functions.append(self.sqrt)
@@ -138,9 +139,9 @@ class SINDyNew():
         return self.feature_names
     
     def transform(self, z):
-      theta = [cand_func(z) for cand_func in self.candidate_functions]
-      out =  np.concatenate(theta,axis=1)
-      return out
+        theta = [cand_func(z) for cand_func in self.candidate_functions]
+        out =  np.concatenate(theta,axis=1)
+        return out
 
 if __name__ == '__main__':
     # some test for the SINDy lib
