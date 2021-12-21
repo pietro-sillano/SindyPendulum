@@ -1,5 +1,6 @@
 import torch
 import itertools
+import numpy as np
 
 class SINDyNumpy():
     def __init__(self,
@@ -146,9 +147,8 @@ class SINDyNumpy():
     
     def transform(self, z):
         theta = [cand_func(z) for cand_func in self.candidate_functions]
-        out =  torch.cat(theta, axis=1)
-        return out.detach().numpy()
-
+        out =  np.concatenate(theta, axis=1)
+        return out
 
 if __name__ == '__main__':
     # some test for the SINDy lib
