@@ -1,7 +1,7 @@
 import torch
 import itertools
 
-class SINDyLibrary():
+class SINDyNumpy():
     def __init__(self,
                  latent_dim=3,
                  include_biases=True,
