@@ -32,12 +32,10 @@ def image_gen(ics):
     y = np.linspace(-1.5, 1.5, NY)
     xx,yy = np.meshgrid(x, y)
 
-    #data = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.uint8)
-    #data2 = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.uint8)
+
     data = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.float32)
     data2 = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.float32)
 
-    #data = np.empty([len(ics), len(t), len(x), len(y)])
 
     for idx in range(len(ics)):
         if(idx%100==0): print(idx,' su ', len(ics))
@@ -50,7 +48,6 @@ def image_gen(ics):
         for i in range(len(theta)):
             z = np.exp(- 20 *((xx - np.cos(theta[i] + np.pi/2))*(xx - 
                 np.cos(theta[i] +np.pi/2))) - 20 * ((yy -np.sin(theta[i]+np.pi/2))*(yy -np.sin(theta[i]+np.pi/2))))
-            #z = ((z - np.min(z))/(np.max(z)-np.min(z))) * 255
             z = ((z - np.min(z))/(np.max(z)-np.min(z)))
 
             temp.append(z)
@@ -58,9 +55,12 @@ def image_gen(ics):
         
         temp = []
         for i in range(len(omega)):
-            z = np.exp(- 20 *((xx - np.cos(omega[i] + np.pi/2))*(xx - 
+            exp = np.exp(- 20 *((xx - np.cos(omega[i] + np.pi/2))*(xx - 
                 np.cos(omega[i] +np.pi/2))) - 20 * ((yy -np.sin(omega[i]+np.pi/2))*(yy -np.sin(omega[i]+np.pi/2))))
-            #z = ((z - np.min(z))/(np.max(z)-np.min(z))) * 255
+
+            z = -20*(2*(xx - np.cos(theta[i]-np.pi/2))*np.sin(theta[i]-np.pi/2)*omega[i] 
+                        + 2*(yy - np.sin(theta[i]-np.pi/2))*(-np.cos(theta[i]-np.pi/2))*omega[i])
+            z = z*exp
             z = ((z - np.min(z))/(np.max(z)-np.min(z)))
 
             temp.append(z)
@@ -106,6 +106,7 @@ if __name__ == "__main__":
 
     with open('X.npy', 'wb') as f:
         np.save(f, data)
+    del data
     with open('Xdot.npy', 'wb') as f2:
         np.save(f2, data2)
-
+    del data2

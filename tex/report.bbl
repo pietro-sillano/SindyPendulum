@@ -1,5 +1,9 @@
 \begin{thebibliography}{1}
 
+\bibitem{2}
+{PyTorch documentation}.
+\newblock \url{https://pytorch.org/docs/stable/index.html}.
+
 \bibitem{1}
 Kathleen Champion, Bethany Lusch, J.~Nathan Kutz, and Steven~L. Brunton.
 \newblock {\em Data-driven discovery of coordinates and governing equations}.

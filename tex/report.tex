@@ -28,6 +28,7 @@
 \begin{document}
 \maketitle
 \nocite{1} 
+\nocite{2} 
 
 
 %MAX 4 PAGINE 
@@ -55,13 +56,13 @@ In questo caso i samples del dataset considerato sono snapshot(istantanee) di un
 %\includegraphics[width=10cm,]{pendulum_motion}
 \includegraphics[width=\textwidth]{pendulum_motion}
 Ricordando l'equazione del moto di un pendolo:
-$$ \ddot{\theta} = \sin(\theta) $$
+$$ \ddot{\theta} = - \sin(\theta) $$
 che posso riscrivere come un sistema di due ODE del primo ordine, ossia:
 
 $$
 \begin{cases} 
 \dot{\theta} = \omega \\ 
-\dot{\omega} = \sin(\theta)
+\dot{\omega} = - \sin(\theta)
 \end{cases}
 $$
 
@@ -123,8 +124,9 @@ plot con le traiettorie predette a confronto con quelle originali
 
 
 \section{Conclusioni e possibili sviluppi futuri}
-Estendere ad altri sistemi dinamici
-modificare e rendere piu deep l architettura
+Estendere ad altri sistemi dinamici,
+modificare e rendere piu deep l architettura,
+introdurre un sistema di time derivatives al secondo ordine, quindi provare a ricostruire $\ddot{x}$ da  $x$.
 
 
 
