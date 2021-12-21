@@ -80,7 +80,7 @@ if __name__ == "__main__":
     #n_ics = 100
     ta = 0.
     tb = 5.
-    dt = 0.02 
+    dt = 0.05  
     # tb = 10
     # dt = 0.1
     NX = 51
