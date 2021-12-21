@@ -36,6 +36,11 @@
 % VOLENDO INFORMAZIONI ADDIZIONALI IN APPENDICE
 
 \section{Introduzione/Abstract}
+We present a method for the simultaneous discovery of sparse dynamical models and coordinates
+that enable these simple representations.
+
+
+
 L'idea del paper considerato consiste nello sviluppare un approccio che contemporaneamente individui un modello per un sistema dinamico e delle coordinate rappresentative del sistema.
 Il primo obiettivo viene raggiunto attraverso una sparse regression in una libreria di funzioni candidate mentre il secondo viene raggiunto tramite l'utilizzo di un autoencoder tramite una riduzione di dimensionalitá del sistema.
 \section{Obiettivi/Problem,question,task}
@@ -46,12 +51,14 @@ Mentre gli autoencoder possono essere allenati individualmente per effettuare ri
 \section{Metodi}
 
 \subsection{Dataset}
-Un punto a favore di questo tipo di architettura é la grande quantitá di samples che é possibile generare sinteticamente e la libertá con cui é possibile manipolare e condizionare il dataset; per esempio il numero di condizioni iniziali del sistema dinamico che stiamo considerando, la possibilitá di poter studiare segnali temporali con un noise inserito ad hoc o l'intervallo temporale con cui integriamo le equazioni del moto.
+Un punto a favore di questo approccio é la grande quantitá di samples che é possibile generare sinteticamente e la libertá con cui é possibile manipolare e condizionare il dataset; per esempio il numero di condizioni iniziali del sistema dinamico che stiamo considerando, la possibilitá di poter studiare segnali temporali con un noise inserito ad hoc o l'intervallo temporale con cui integriamo le equazioni del moto.
 
 \subsubsection{Lorentz}
 
 \subsubsection{Pendolo}
 In questo caso i samples del dataset considerato sono snapshot(istantanee) di un video del moto di un pendolo.
+Snapshots of the high-dimensional
+system are images representing the position of the pendulum in time. 
 
 %\includegraphics[width=10cm,]{pendulum_motion}
 \includegraphics[width=\textwidth]{pendulum_motion}
@@ -82,19 +89,53 @@ In questo modo é possibile generare molti samples.
 
 Per generare il dataset sono state usate 100 condizioni iniziali per $\theta_0$ e 100 per $\omega_0$ combinandole assieme e escludendo le condizioni iniziali per cui il pendolo non ha un attrattore "chiuso" o con un ciclo limite. Complessivamente quindi rimangono circa 5000 condizioni iniziali differenti.
 
-\subsection{Architettura}
+\subsection{Architettura della rete}
+L'autoencoder fa our method seeks a set of reduced coordinates $z(t) = phi(x(t))  Rd (d x n)$
+
+The coordinate transformation is achieved using an autoencoder network architecture. The
+autoencoder is a feedforward neural network with a hidden layer that represents the intrinsic co-
+ordinates.
+ the autoencoder learns a nonlinear embedding into a reduced latent space. Our
+network takes measurement data x(t)  Rn from a dynamical system as input and learns intrinsic
+coordinates z(t)  Rd, where d x n is chosen as a hyperparameter prior to training the network.
+The autoencoder network consists of a series of fully-connected layers. 
+é semplice sono 3/4 layer fully connected
+
 L'architettura presentata nel paper é stata riscritta in PyTorch.
+\subsection{Sindy}
+
+%We require the network to learn coordinates associ-
+%ated with parsimonious dynamics by simultaneously learning a SINDy model for the dynamics
+%of the intrinsic coordinates z. This regularization is achieved by constructing a library theta(z) =
+%[θ1 (z), θ2 (z), . . . , θ p (z)] of candidate basis functions, e.g. polynomials, and learning a sparse set of
+%coefficients Ξ = [ξ 1 , . . . , ξd] that defines the dynamical system
+%d
+%z(t) = g(z(t)) = Θ(z(t))Ξ.
+%dt
+%(3)
+%While the functions in the library must be specified prior to training, the coefficients Ξ are learned
+%along with the NN parameters as part of the training procedure. 
+
+
+
+La libreria delle funzioni scelte é usata per formulare un problema di regressione per risolvere in modo approssimato il sistema lineare di equazioni sovradeterminato(abbiamo piú equazioni che incognite).
+
+$$\dot{X} = \Theta(X) \Xi$$
+dove $X$ é una matrice (t x n) dove t é il numero di samples temporali e n é il numero di variabili del sistema dinamico contenente gli stati del sistema, $\dot{X}$ di uguale dimensione a X ma contenente i time derivatives degli stati del sistema. 
+La matrice $\Theta$ é nota e costituisce la nostra libreria di funzioni con cui vogliamo fittare il sistema dinamico. é (t x num di funzioni)
+La matrice incognita $\Xi =  (\xi_1,\xi_2,...\xi_n) $ é (num funzioni x numero di variabili del modello)contiene i coefficienti che determinano i termini attivi della matrice theta. Noi vorremmo che questa matrice sia sparsa in modo da avere pochi termini selezionati dalla theta.
 
 
 \subsection{Loss }
-Un punto principale di questa architettura é come vengono definite e usate le funzioni di costo della rete. Infatti la loss non é semplicemente la MSE loss (mean squared loss) tra l'input x dell' autoencoder e la ricostruzione $\tilde{x}$ in output. Vengono aggiunti alcuni termini che garantiscono oltre alla ricostruzione dell'input, anche la ricostruzione delle derivate temporali $\dot{x}$ e $\dot{z}$ e infine é presente anche un termine di regolarizzazione L1 sui coefficienti $\xi $ in modo da promuovere la sparsity di quest'ultimi.
+Un punto principale di questa architettura é come vengono definite e usate le funzioni di costo della rete. Infatti la loss non é semplicemente la MSE loss (mean squared loss) tra l'input x dell' autoencoder e la ricostruzione $\tilde{x}$ in output. Vengono aggiunti alcuni termini che garantiscono oltre alla ricostruzione dell'input, anche la ricostruzione delle derivate temporali $\dot{x}$ e $\dot{z}$ e infine é presente anche un termine di regolarizzazione L1 sui coefficienti $\Xi $ in modo da promuovere la sparsity di quest'ultimi.
 \newline
+Per un dataset con m samples di input, ogni loss é esplicitamente definita come segue:
 
 \begin{itemize}
-\item $L_{recon} = \|x - \tilde{x}|_2^2 $ questa misura quanto bene l'autoencoder riesce a ricostruire l'input x.
-\item $L_{dz} = \|\dot{z} - \theta(z)\xi\|_2^2 $ vedi paper cosa dice
-\item $L_{dx} = \|\dot{x} - \dot{\tilde{x}}\|_2^2 $ misura quanto le predizioni di Sindy ossia $\dot{\tilde{x}}$ possano essere usate per ricostruire l'input originale $\dot{x}$
-\item $L_{reg} = \|{\xi}\|_1 $ é una regolarizzazione L1 che promuove la sparsity dei coefficienti $\xi$ che coincide con i nostri obiettivi perché noi vorremmo scoprire modelli parsimoniosi ossia con il minor numero di parametri possibile.
+\item $L_{recon} = \frac{1}{m}\sum_{i=1}^{m}\|x_i - \tilde{x_i}|_2^2 $ questa misura quanto bene l'autoencoder riesce a ricostruire l'input x.
+\item $L_{dz} = \frac{1}{m}\sum_{i=1}^{m}\|\dot{z_i} - \Theta(z_i)\Xi\|_2^2 $ Questo termine misura quanto il modello predica correttamente le derivata temporale delle variabili ridotte z
+\item $L_{dx} = \frac{1}{m}\sum_{i=1}^{m}\|\dot{x_i} - \dot{\tilde{x_i}}\|_2^2 $ misura quanto le predizioni di Sindy ossia $\dot{\tilde{x}}$ possano essere usate per ricostruire l'input originale $\dot{x}$
+\item $L_{reg} = \frac{1}{m}\sum_{i=1}^{m}\|{\Xi}\|_1 $ é una regolarizzazione L1 che promuove la sparsity dei coefficienti $\Xi$ che coincide con i nostri obiettivi perché noi vorremmo scoprire modelli parsimoniosi ossia con il minor numero di parametri possibile.
 \end{itemize}
 Per cui combinando insieme i quattro termini di loss insieme ai relativi iperparametri la loss finale é la seguente: 
 $$L_{tot} = L_{recon} + \lambda_1L_{dx} + \lambda_2L_{dz} + \lambda_3L_{reg} $$
@@ -110,30 +151,31 @@ $$
 \dot{x}\prod_{l=0}^{m-1} \frac{df(z_l)}{dz_l}\frac{dz_l}{dx} = 
 \dot{x}\prod_{l=0}^{m-1} \frac{df(z_l)}{dz_l}w_l^{\top} 
 $$
-
 Applicando questa regola con $y = \dot{z} $ é possibile calcolarla a partire da $\dot{x}$ e allo stesso modo se $y = \dot{\tilde{x}}$ a partire da $\dot{\tilde{z}}$ quest ultima ricavata con Sindy $\dot{\tilde{z}} = \theta(z)\xi$
 
 \subsection{Dettagli Training}
 Batch size = 1024
 Funzione di attivazione $f$ = ReLU o Sigmoide
+optimizer = adam o sgd 
+weight initializations (sottolineare quanto sia importante per un training ragionevole)
 
 \section{Risultati}
 plot con le loss standard
 
 plot con le traiettorie predette a confronto con quelle originali
 
-
+parlare della difficoltá della model selection in quanto non é una semplice misura  o valutazione della loss ma una considerazione della parsimoniositá e della correttezza dei coefficienti del modello dinamico trovato
 \section{Conclusioni e possibili sviluppi futuri}
 Estendere ad altri sistemi dinamici,
 modificare e rendere piu deep l architettura,
 introdurre un sistema di time derivatives al secondo ordine, quindi provare a ricostruire $\ddot{x}$ da  $x$.
 
 
-
 \bibliographystyle{plain}
 \bibliography{bibliography.bib}
 
 \section{Codice}
-É possibile trovare l'implementazione del codice su \url{https://github.com/pietro-sillano/SindyPendulum}
+Implementazione del codice su 
+\url{https://github.com/pietro-sillano/SindyPendulum}.
 
 \end{document}
