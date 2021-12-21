@@ -1,18 +1,21 @@
+import torch
 import itertools
-import numpy as np
-class SINDyNew():
+
+class SINDyLibrary():
     def __init__(self,
                  latent_dim=3,
                  include_biases=True,
                  include_states=True,
-                 include_sin=True,
+                 include_sin=False,
                  include_cos=True,
-                 include_multiply_pairs=True,
+                 include_multiply_pairs=False,
                  poly_order=2,
                  include_sqrt=True,
-                 include_inverse=False,
-                 include_sign_sqrt_of_diff=True,):
+                 include_inverse=True,
+                 include_sign_sqrt_of_diff=False,
+                 device='cuda:0'):
 
+        self.device = device
         self.candidate_functions = []
         self.feature_names = []
         # initialize lib with biasses 
@@ -34,7 +37,8 @@ class SINDyNew():
         
 
     def biases(self, z):
-        return np.ones((z.shape[0],1))
+        temp =  torch.ones(z.shape[0], 1, device=self.device)
+        return temp.detach().numpy()
 
     @staticmethod
     def states(z):
@@ -54,7 +58,8 @@ class SINDyNew():
             res = z[:, idx1] * z[:, idx2]
             res = res.reshape(-1, 1)
             result.append(res)
-        return np.concatenate(result, axis=1)
+        temp =  torch.cat(result, axis=1)
+        return temp.detach().numpy()
 
     @staticmethod
     def inverse(z):
@@ -64,11 +69,13 @@ class SINDyNew():
         result = []
         for i in range(self.latent_dim):
             for j in range(i, self.latent_dim):
-                res = z[:,i]*z[:,j]
-                res = res.reshape(-1, 1)
-                result.append(res)
-        return np.concatenate(result, axis=1)
-    
+                    res = z[:,i]*z[:,j]
+                    res = res.reshape(-1, 1)
+                    result.append(res)
+        temp =  torch.cat(result, axis=1)
+        return temp.detach().numpy()
+
+
     @staticmethod
     def sqrt(z):
         return np.sqrt(z)
@@ -76,10 +83,12 @@ class SINDyNew():
     def sing_sqrt_diff_pairs(self, z):
         result = []
         for idx1, idx2 in self.idx_combis_commutative:
-            res = np.sign(z[:, idx1] - z[:,idx2])*np.sqrt(np.abs(z[:, idx1] - z[:,idx2]))
+            res = torch.sign(z[:, idx1] - z[:,idx2])*torch.sqrt(torch.abs(z[:, idx1] - z[:,idx2]))
             res = res.reshape(-1, 1)
             result.append(res)
-        return np.concatenate(result, axis=1)
+        temp =  torch.cat(result, axis=1)
+        return temp.detach().numpy()
+
 
 
 
@@ -120,10 +129,7 @@ class SINDyNew():
             names = []
             for i in range(self.latent_dim):
                 for j in range(i, self.latent_dim):
-#                    for k in range(j, self.latent_dim):
-                        #names.append(f'z{i}*z{j}*z{k}')
                         names.append(f'z{i}*z{j}')
-
             self.feature_names.extend(names)
         if self.include_sqrt:
             self.candidate_functions.append(self.sqrt)
@@ -140,15 +146,13 @@ class SINDyNew():
     
     def transform(self, z):
         theta = [cand_func(z) for cand_func in self.candidate_functions]
-        out =  np.concatenate(theta,axis=1)
-        return out
+        out =  torch.cat(theta, axis=1)
+        return out.detach().numpy()
+
 
 if __name__ == '__main__':
     # some test for the SINDy lib
-    import numpy as np
-    z = np.array([[1, 2, 3], [4, 0, 6]])
-    sl = SINDyNew()
+    import torch
+    z = torch.tensor([[1, 2, 3], [4, 0, 6]])
+    sl = SINDyLibrary()
     theta = sl.transform(z)
-    print(sl.get_feature_names())
-    print(theta.shape)
-    print(theta)
