@@ -77,7 +77,6 @@ if __name__ == "__main__":
     n_ics=int(args["initialconditions"])
     
     #COSTANTI e PARAMETRI
-    #n_ics = 100
     ta = 0.
     tb = 5.
     dt = 0.05  
