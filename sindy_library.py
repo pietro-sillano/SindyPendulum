@@ -45,7 +45,7 @@ class SINDyLibrary():
 
     @staticmethod
     def sin(z):
-        return torch.sin(z)
+        return - torch.sin(z)
     
     @staticmethod
     def cos(z):
