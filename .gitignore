@@ -11,6 +11,8 @@ __pycache__/
 cpp/
 tex/
 plotting/
+video/
+paper/
 
 # Distribution / packaging
 .Python
