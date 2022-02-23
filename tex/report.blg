@@ -1,0 +1,49 @@
+This is BibTeX, Version 0.99d (TeX Live 2021/Arch Linux)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: report.aux
+The style file: plain.bst
+Database file #1: bibliography.bib
+Warning--to sort, need author or key in pytorch
+Warning--empty journal in kchamp
+You've used 3 entries,
+            2118 wiz_defined-function locations,
+            509 strings with 4561 characters,
+and the built_in function-call counts, 968 in all, are:
+= -- 80
+> -- 77
+< -- 0
++ -- 31
+- -- 28
+* -- 73
+:= -- 175
+add.period$ -- 8
+call.type$ -- 3
+change.case$ -- 23
+chr.to.int$ -- 0
+cite$ -- 5
+duplicate$ -- 27
+empty$ -- 58
+format.name$ -- 28
+if$ -- 186
+int.to.chr$ -- 0
+int.to.str$ -- 3
+missing$ -- 2
+newline$ -- 17
+num.names$ -- 4
+pop$ -- 30
+preamble$ -- 1
+purify$ -- 20
+quote$ -- 0
+skip$ -- 22
+stack$ -- 0
+substring$ -- 15
+swap$ -- 2
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 12
+warning$ -- 2
+while$ -- 4
+width$ -- 4
+write$ -- 28
+(There were 2 warnings)

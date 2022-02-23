@@ -1,0 +1,20 @@
+\begin{thebibliography}{1}
+
+\bibitem{pytorch}
+{PyTorch documentation}.
+\newblock \url{https://pytorch.org/docs/stable/index.html}.
+
+\bibitem{kchamp}
+Kathleen Champion, Bethany Lusch, J.~Nathan Kutz, and Steven~L. Brunton.
+\newblock Data-driven discovery of coordinates and governing equations.
+\newblock 2019.
+
+\bibitem{pysindy}
+Alan~A. Kaptanoglu, Brian~M. de~Silva, Urban Fasel, Kadierdan Kaheman, Jared~L.
+  Callaham, Charles~B. Delahunt, Kathleen Champion, Jean-Christophe Loiseau,
+  J.~Nathan Kutz, and Steven~L. Brunton.
+\newblock Pysindy: A comprehensive python package for robust sparse system
+  identification.
+\newblock {\em arXiv preprint arXiv:2111.08481}, 2021.
+
+\end{thebibliography}
