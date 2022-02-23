@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import sys
 
-syspath = 'SindyPendulum/'
-if syspath not in sys.path:
-    sys.path.append(syspath)
+#syspath = 'SindyPendulum/'
+#if syspath not in sys.path:
+    #sys.path.append(syspath)
     
 from sindy_library import SINDyLibrary
 

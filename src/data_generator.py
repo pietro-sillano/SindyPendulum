@@ -1,8 +1,3 @@
-#TODO
-# 1) implementare un diretto to device giá qua, se serve
-# 3) aggiungere un file con qualche funzione di altri sistemi dinamici
-# 5) fare una funzione simulate system dynamics generate
-
 import os
 import argparse, sys
 import numpy as np
@@ -71,7 +66,7 @@ def image_gen(ics):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-i', '--initialconditions', help='number of initial conditions', required=True)
+    parser.add_argument('-i', '--initialconditions', help='number of initial conditions', required=False ,type=int, default=100)
 
     args = vars(parser.parse_args())
     n_ics=int(args["initialconditions"])
@@ -93,9 +88,6 @@ if __name__ == "__main__":
     ics = select_ics(theta0,omega0)
     data,data2 = image_gen(ics)
 
-
-#questo reshape serve per mandare al autoencoder delle immagini flat
-#TODO verifica che sia corretto questo rehsape --> dovrebb essere ok fatto prova su colab
     data = data.reshape((len(ics) * len(t),NX * NY))
     data2 = data2.reshape((len(ics) * len(t),NX * NY))
 
