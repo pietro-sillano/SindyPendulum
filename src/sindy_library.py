@@ -59,7 +59,8 @@ class SINDyLibrary():
         return 1/z
 
     def poly_deg_2(self, z):
-        return z[:, self._poly_i] * z[:, self._poly_j]
+        # squared terms only; cross terms (z_i*z_j, i≠j) are in multiply_pairs
+        return z ** 2
 
     @staticmethod
     def sqrt(z):
@@ -79,11 +80,9 @@ class SINDyLibrary():
         self.idx_combis_non_commutative = permuts
         self.idx_combis_commutative = list(set([tuple(sorted(list(p))) for p in permuts]))
 
-        # precomputed index arrays for vectorised poly/multiply operations
+        # precomputed index arrays for vectorised multiply operations
         self._mult_idx1 = [p[0] for p in self.idx_combis_commutative]
         self._mult_idx2 = [p[1] for p in self.idx_combis_commutative]
-        self._poly_i = [i for i in range(self.latent_dim) for j in range(i, self.latent_dim)]
-        self._poly_j = [j for i in range(self.latent_dim) for j in range(i, self.latent_dim)]
 
         if self.include_biases:
             self.candidate_functions.append(self.biases)
@@ -111,10 +110,8 @@ class SINDyLibrary():
             self.feature_names.extend(names)
         if self.poly_order == 2:
             self.candidate_functions.append(self.poly_deg_2)
-            names = []
-            for i in range(self.latent_dim):
-                for j in range(i, self.latent_dim):
-                        names.append(f'z{i}*z{j}')
+            # squared terms only; cross terms live in multiply_pairs
+            names = [f'z{i}^2' for i in range(self.latent_dim)]
             self.feature_names.extend(names)
         if self.include_sqrt:
             self.candidate_functions.append(self.sqrt)

@@ -111,19 +111,20 @@ class Autoencoder(nn.Module):
         dadt = xdot #per le condizioni iniziali
 
         if activation == 'sigmoid':
-            for i in range(len(weights) - 1):
+            # include ALL layers: the forward pass applies sigmoid to every layer
+            for i in range(len(weights)):
                 z = torch.matmul(a, weights[i].T) + biases[i]
                 a = torch.sigmoid(z)
-                gprime = a * (1-a)
+                gprime = a * (1 - a)
                 dadt = gprime * torch.matmul(dadt, weights[i].T)
-            dadt = torch.matmul(dadt, weights[-1].T) #fuori dal ciclo bisogna ancora moltiplicare per i pesi dell ultimo livello
-            
+
         elif activation == 'relu':
-            for i in range(len(weights) - 1):
+            # include ALL layers: the forward pass applies relu to every layer,
+            # including the last one — the original code was missing that mask.
+            for i in range(len(weights)):
                 z = torch.matmul(a, weights[i].T) + biases[i]
                 a = torch.relu(z)
-                dadt = (z > 0).float() * torch.matmul(dadt, weights[i].T)    
-            dadt = torch.matmul(dadt, weights[-1].T) #fuori dal ciclo bisogna ancora moltiplicare per i pesi dell ultimo livello
+                dadt = (z > 0).float() * torch.matmul(dadt, weights[i].T)
         return dadt #nel caso che ci serve dadt sará l output dell encoder ossia le latent variables!
 
     
