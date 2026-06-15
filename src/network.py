@@ -1,11 +1,6 @@
 import torch
 import torch.nn as nn
-import sys
 
-#syspath = 'SindyPendulum/'
-#if syspath not in sys.path:
-    #sys.path.append(syspath)
-    
 from sindy_library import SINDyLibrary
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -22,7 +17,6 @@ class Encoder(nn.Module):
 
     def initialize_weights(self):
         for m in self.modules():
-            print(m)
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
                 if m.bias is not None:
@@ -81,6 +75,15 @@ class Autoencoder(nn.Module):
 
         self.XI_coefficient_mask = torch.ones((self.SINDyLibrary.number_candidate_functions,latent_dim),dtype = torch.float32, device=device)
 
+        self.mse = nn.MSELoss()
+
+        enc_params = list(self.encoder.parameters())
+        self._enc_weights = [w for w in enc_params if len(w.shape) == 2]
+        self._enc_biases  = [b for b in enc_params if len(b.shape) == 1]
+        dec_params = list(self.decoder.parameters())
+        self._dec_weights = [w for w in dec_params if len(w.shape) == 2]
+        self._dec_biases  = [b for b in dec_params if len(b.shape) == 1]
+
     def configure_optimizers(self):
         learning_rate = 1e-4
  #       return torch.optim.SGD(self.parameters(), lr=0.1)
@@ -130,38 +133,28 @@ class Autoencoder(nn.Module):
         z = self.encoder(x)
         xtilde = self.decoder(z)
 
-        theta = self.SINDyLibrary.transform(z) 
+        theta = self.SINDyLibrary.transform(z)
         zdot_hat = torch.matmul(theta, self.XI_coefficient_mask * self.XI)
-        
-        encoder_parameters = list(self.encoder.parameters())
-        encoder_weight_list = [w for w in encoder_parameters if len(w.shape) == 2]
-        encoder_biases_list = [b for b in encoder_parameters if len(b.shape) == 1]
-        zdot = self.t_derivative(x, xdot, encoder_weight_list, encoder_biases_list, activation='relu')                                               
 
-        #print("propagazione sul decoder")
-        decoder_parameters = list(self.decoder.parameters())
-        decoder_weight_list = [w for w in decoder_parameters if len(w.shape) == 2]
-        decoder_biases_list = [b for b in decoder_parameters if len(b.shape) == 1]
-        xtildedot = self.t_derivative(z, zdot_hat, decoder_weight_list, decoder_biases_list, activation='relu')    
+        zdot = self.t_derivative(x, xdot, self._enc_weights, self._enc_biases, activation='relu')
+        xtildedot = self.t_derivative(z, zdot_hat, self._dec_weights, self._dec_biases, activation='relu')
         
         return xtilde, xtildedot, z, zdot, zdot_hat
 
-    def loss_function(self, x, xdot, xtilde, xtildedot, zdot, zdot_hat,XI):
-        mse = nn.MSELoss()
+    def loss_function(self, x, xdot, xtilde, xtildedot, zdot, zdot_hat, XI):
         alpha1 = 5e-4
         alpha2 = 5e-5
         alpha3 = 1e-5
-        #alpha1 = 5e-3
-        #alpha2 = 5e-4
-        #alpha3 = 1e-4
         loss = {}
-        loss['recon_loss'] = mse(x, xtilde) #errore di ricostruzione 
-        loss ['sindy_loss_x'] = mse(xdot, xtildedot) 
-        loss ['sindy_loss_z'] = mse(zdot, zdot_hat) 
-        loss['sindy_regular_loss'] = torch.sum(torch.abs(XI)) #norma L1 degli XI
-        loss['tot'] = loss['recon_loss'] + alpha1*loss['sindy_loss_x'] + alpha2*loss['sindy_loss_z'] + alpha3*loss['sindy_regular_loss']
-        tot = loss['tot']
-        return tot, loss
+        loss['recon_loss'] = self.mse(x, xtilde)
+        loss['sindy_loss_x'] = self.mse(xdot, xtildedot)
+        loss['sindy_loss_z'] = self.mse(zdot, zdot_hat)
+        loss['sindy_regular_loss'] = torch.sum(torch.abs(XI))
+        loss['tot'] = (loss['recon_loss']
+                       + alpha1 * loss['sindy_loss_x']
+                       + alpha2 * loss['sindy_loss_z']
+                       + alpha3 * loss['sindy_regular_loss'])
+        return loss['tot'], loss
     
     def forward(self, x, xdot):
         return self.compute_quantities(x, xdot)

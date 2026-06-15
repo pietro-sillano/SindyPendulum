@@ -52,37 +52,22 @@ class SINDyLibrary():
         return torch.cos(z)
 
     def multiply_pairs(self, z):
-        result = []
-        for idx1, idx2 in self.idx_combis_commutative:
-            res = z[:, idx1] * z[:, idx2]
-            res = res.reshape(-1, 1)
-            result.append(res)
-        return torch.cat(result, axis=1)
+        return z[:, self._mult_idx1] * z[:, self._mult_idx2]
 
     @staticmethod
     def inverse(z):
         return 1/z
 
     def poly_deg_2(self, z):
-        result = []
-        for i in range(self.latent_dim):
-            for j in range(i, self.latent_dim):
-                    res = z[:,i]*z[:,j]
-                    res = res.reshape(-1, 1)
-                    result.append(res)
-        return torch.cat(result, axis=1)
+        return z[:, self._poly_i] * z[:, self._poly_j]
 
     @staticmethod
     def sqrt(z):
         return torch.sqrt(z)
 
     def sing_sqrt_diff_pairs(self, z):
-        result = []
-        for idx1, idx2 in self.idx_combis_commutative:
-            res = torch.sign(z[:, idx1] - z[:,idx2])*torch.sqrt(torch.abs(z[:, idx1] - z[:,idx2]))
-            res = res.reshape(-1, 1)
-            result.append(res)
-        return torch.cat(result, axis=1)
+        diff = z[:, self._mult_idx1] - z[:, self._mult_idx2]
+        return torch.sign(diff) * torch.sqrt(torch.abs(diff))
 
 
 
@@ -93,6 +78,12 @@ class SINDyLibrary():
         permuts = [p for p in permuts if not p[0] == p[1]]
         self.idx_combis_non_commutative = permuts
         self.idx_combis_commutative = list(set([tuple(sorted(list(p))) for p in permuts]))
+
+        # precomputed index arrays for vectorised poly/multiply operations
+        self._mult_idx1 = [p[0] for p in self.idx_combis_commutative]
+        self._mult_idx2 = [p[1] for p in self.idx_combis_commutative]
+        self._poly_i = [i for i in range(self.latent_dim) for j in range(i, self.latent_dim)]
+        self._poly_j = [j for i in range(self.latent_dim) for j in range(i, self.latent_dim)]
 
         if self.include_biases:
             self.candidate_functions.append(self.biases)

@@ -32,36 +32,40 @@ def image_gen(ics):
     data2 = np.empty([len(ics), len(t), len(x), len(y)],dtype = np.float32)
 
 
+    # add broadcast dims: (T,1,1) so arithmetic with (NX,NY) grids works element-wise
+    xx2d = xx[None]   # (1, NX, NY)
+    yy2d = yy[None]
+
     for idx in range(len(ics)):
-        if(idx%100==0): print(idx,' su ', len(ics))
+        if idx % 100 == 0:
+            print(idx, ' su ', len(ics))
         y0 = [ics[idx][0], ics[idx][1]]
-        sol = odeint(pend, y0,t)
-        theta = sol[:,0]
-        omega = sol[:,1]
+        sol = odeint(pend, y0, t)
+        theta = sol[:, 0]  # (T,)
+        omega = sol[:, 1]
 
-        temp = []
-        for i in range(len(theta)):
-            z = np.exp(- 20 *((xx - np.cos(theta[i] + np.pi/2))*(xx - 
-                np.cos(theta[i] +np.pi/2))) - 20 * ((yy -np.sin(theta[i]+np.pi/2))*(yy -np.sin(theta[i]+np.pi/2))))
-            z = ((z - np.min(z))/(np.max(z)-np.min(z)))
+        # vectorise over time: (T,1,1) broadcast with (1,NX,NY)
+        cos_th = np.cos(theta + np.pi/2)[:, None, None]
+        sin_th = np.sin(theta + np.pi/2)[:, None, None]
+        z_all = np.exp(-20 * ((xx2d - cos_th)**2 + (yy2d - sin_th)**2))  # (T, NX, NY)
+        z_min = z_all.min(axis=(1, 2), keepdims=True)
+        z_max = z_all.max(axis=(1, 2), keepdims=True)
+        data[idx] = ((z_all - z_min) / (z_max - z_min)).astype(np.float32)
 
-            temp.append(z)
-        data[idx] = np.array(temp)
-        
-        temp = []
-        for i in range(len(omega)):
-            exp = np.exp(- 20 *((xx - np.cos(omega[i] + np.pi/2))*(xx - 
-                np.cos(omega[i] +np.pi/2))) - 20 * ((yy -np.sin(omega[i]+np.pi/2))*(yy -np.sin(omega[i]+np.pi/2))))
+        cos_om = np.cos(omega + np.pi/2)[:, None, None]
+        sin_om = np.sin(omega + np.pi/2)[:, None, None]
+        gauss = np.exp(-20 * ((xx2d - cos_om)**2 + (yy2d - sin_om)**2))
 
-            z = -20*(2*(xx - np.cos(theta[i]-np.pi/2))*np.sin(theta[i]-np.pi/2)*omega[i] 
-                        + 2*(yy - np.sin(theta[i]-np.pi/2))*(-np.cos(theta[i]-np.pi/2))*omega[i])
-            z = z*exp
-            z = ((z - np.min(z))/(np.max(z)-np.min(z)))
+        cos_th2 = np.cos(theta - np.pi/2)[:, None, None]
+        sin_th2 = np.sin(theta - np.pi/2)[:, None, None]
+        om_t = omega[:, None, None]
+        dz = -20 * (2 * (xx2d - cos_th2) * sin_th2 * om_t
+                    + 2 * (yy2d - sin_th2) * (-cos_th2) * om_t) * gauss
+        dz_min = dz.min(axis=(1, 2), keepdims=True)
+        dz_max = dz.max(axis=(1, 2), keepdims=True)
+        data2[idx] = ((dz - dz_min) / (dz_max - dz_min)).astype(np.float32)
 
-            temp.append(z)
-        data2[idx] = np.array(temp)
-        
-    return data,data2
+    return data, data2
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
