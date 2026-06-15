@@ -28,16 +28,18 @@ class Encoder(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight, nonlinearity='relu')
-                nn.init.constant_(m.bias, 0)
+        for m in [self.fc1, self.fc2, self.fc3]:
+            nn.init.kaiming_normal_(m.weight, nonlinearity='relu')
+            nn.init.constant_(m.bias, 0)
+        # last layer is linear (no activation) → Xavier init
+        nn.init.xavier_normal_(self.fc4.weight)
+        nn.init.constant_(self.fc4.bias, 0)
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
         x = torch.relu(self.fc3(x))
-        x = torch.relu(self.fc4(x))
+        x = self.fc4(x)          # no activation: latent space must be unconstrained
         return x
 
 
@@ -102,12 +104,24 @@ class Autoencoder(nn.Module):
         dadt = xdot
 
         if activation == 'sigmoid':
-            for i in range(len(weights)):
+            # all hidden layers use sigmoid; last layer is linear (no mask)
+            for i in range(len(weights) - 1):
                 z = torch.matmul(a, weights[i].T) + biases[i]
                 a = torch.sigmoid(z)
                 dadt = a * (1 - a) * torch.matmul(dadt, weights[i].T)
+            dadt = torch.matmul(dadt, weights[-1].T)
 
         elif activation == 'relu':
+            # hidden layers use relu; encoder last layer is linear, decoder last
+            # layer is relu — caller passes activation_last to distinguish
+            for i in range(len(weights) - 1):
+                z = torch.matmul(a, weights[i].T) + biases[i]
+                a = torch.relu(z)
+                dadt = (z > 0).float() * torch.matmul(dadt, weights[i].T)
+            dadt = torch.matmul(dadt, weights[-1].T)
+
+        elif activation == 'relu_all':
+            # decoder: relu on every layer including the output
             for i in range(len(weights)):
                 z = torch.matmul(a, weights[i].T) + biases[i]
                 a = torch.relu(z)
@@ -122,8 +136,10 @@ class Autoencoder(nn.Module):
         theta    = self.SINDyLibrary.transform(z)
         zdot_hat = torch.matmul(theta, self.XI_coefficient_mask * self.XI)
 
-        zdot      = self.t_derivative(x, xdot, self._enc_weights, self._enc_biases)
-        xtildedot = self.t_derivative(z, zdot_hat, self._dec_weights, self._dec_biases)
+        # encoder: relu on hidden layers, linear on output → 'relu'
+        zdot      = self.t_derivative(x, xdot, self._enc_weights, self._enc_biases, activation='relu')
+        # decoder: relu on every layer including output → 'relu_all'
+        xtildedot = self.t_derivative(z, zdot_hat, self._dec_weights, self._dec_biases, activation='relu_all')
 
         return xtilde, xtildedot, z, zdot, zdot_hat
 
