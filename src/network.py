@@ -143,10 +143,8 @@ class Autoencoder(nn.Module):
 
         return xtilde, xtildedot, z, zdot, zdot_hat
 
-    def loss_function(self, x, xdot, xtilde, xtildedot, zdot, zdot_hat, XI):
-        alpha1 = 5e-4
-        alpha2 = 5e-5
-        alpha3 = 1e-5
+    def loss_function(self, x, xdot, xtilde, xtildedot, zdot, zdot_hat, XI,
+                      alpha1=0.0, alpha2=0.0, alpha3=1e-5):
         loss = {}
         loss['recon_loss']         = self.mse(x, xtilde)
         loss['sindy_loss_x']       = self.mse(xdot, xtildedot)

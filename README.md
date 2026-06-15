@@ -85,14 +85,26 @@ pip install -r requirements.txt
 
 ### Train
 
+Training uses a two-phase curriculum to avoid SINDy losses overwhelming reconstruction
+before the latent space has converged:
+
+| Phase | Epochs | What trains |
+|---|---|---|
+| 1 | `1 … phase2_start-1` | reconstruction only (`alpha1=alpha2=0`) |
+| 2 | `phase2_start … end` | reconstruction + SINDy losses |
+
 ```bash
 python src/train.py \
-  --n_ics 50 \          # grid size for initial conditions (50×50 grid, ~1400 valid ICs)
+  --n_ics 50 \              # grid size for initial conditions (~1400 valid ICs)
   --epochs 500 \
-  --latent_dim 2 \      # pendulum has 2 physical degrees of freedom
+  --latent_dim 2 \          # pendulum has 2 physical degrees of freedom
   --batch_size 1024 \
   --lr 1e-4 \
-  --seq_thres_every 100 \   # apply sequential thresholding every 100 epochs
+  --phase2_start 100 \      # switch on SINDy losses at epoch 100
+  --alpha1 1e-2 \           # weight for sindy_loss_x (image-space consistency)
+  --alpha2 1e-3 \           # weight for sindy_loss_z (latent-space consistency)
+  --alpha3 1e-5 \           # L1 sparsity weight (both phases)
+  --seq_thres_every 100 \   # sequential thresholding every 100 phase-2 epochs
   --save_every 100 \
   --out output/
 ```
