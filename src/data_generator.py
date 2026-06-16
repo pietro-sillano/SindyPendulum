@@ -59,7 +59,24 @@ def image_gen(ics, t, NX=51, NY=51):
     return data, data2
 
 
-def generate_dataset(n_ics=50, ta=0., tb=5., dt=0.05, NX=51, NY=51):
+def _cast_storage(arr, dtype):
+    """Cast normalised [0, 1] image data to a compact storage dtype.
+
+    The images are b&w (a single Gaussian blob on a near-zero background),
+    so reduced precision is harmless for storage/transfer. uint8 quantises
+    [0, 1] to 256 levels; recover floats with `arr / 255`.
+    """
+    if dtype in ('float32', np.float32):
+        return arr.astype(np.float32)
+    if dtype in ('float16', np.float16):
+        return arr.astype(np.float16)
+    if dtype in ('uint8', np.uint8):
+        return np.round(arr * 255.0).astype(np.uint8)
+    raise ValueError(f"unsupported storage dtype: {dtype}")
+
+
+def generate_dataset(n_ics=50, ta=0., tb=5., dt=0.05, NX=51, NY=51,
+                     dtype='float32'):
     t      = np.arange(ta, tb, dt)
     theta0 = np.linspace(-np.pi, np.pi, n_ics)
     omega0 = np.linspace(-2.1, 2.1, n_ics)
@@ -68,7 +85,7 @@ def generate_dataset(n_ics=50, ta=0., tb=5., dt=0.05, NX=51, NY=51):
     data, data2 = image_gen(ics, t, NX=NX, NY=NY)
     X    = data.reshape(len(ics) * len(t), NX * NY)
     Xdot = data2.reshape(len(ics) * len(t), NX * NY)
-    return X, Xdot
+    return _cast_storage(X, dtype), _cast_storage(Xdot, dtype)
 
 
 if __name__ == "__main__":

@@ -37,7 +37,7 @@ class SINDyLibrary():
         
 
     def biases(self, z):
-        return torch.ones(z.shape[0], 1, device=self.device)
+        return torch.ones(z.shape[0], 1, device=z.device)
 
     @staticmethod
     def states(z):

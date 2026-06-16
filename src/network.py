@@ -79,9 +79,10 @@ class Autoencoder(nn.Module):
         self.XI = nn.Parameter(
             torch.ones(n_funcs, latent_dim, dtype=torch.float32, device=device)
         )
-        self.XI_coefficient_mask = torch.ones(
-            n_funcs, latent_dim, dtype=torch.float32, device=device
-        )
+        # registered as a buffer so .to(device) moves it with the model
+        self.register_buffer('XI_coefficient_mask', torch.ones(
+            n_funcs, latent_dim, dtype=torch.float32
+        ))
         self.mse = nn.MSELoss()
 
         enc_params = list(self.encoder.parameters())

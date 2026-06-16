@@ -39,6 +39,11 @@ def parse_args():
     p.add_argument('--save_every',      type=int,   default=100,
                    help='save checkpoint every N epochs (0 = final only)')
     p.add_argument('--out',             type=str,   default='output/')
+    p.add_argument('--data_dtype',      type=str,   default='float16',
+                   choices=['float32', 'float16', 'uint8'],
+                   help='storage dtype for the dataset; smaller dtypes shrink '
+                        'the VRAM footprint so the data can stay resident. '
+                        'Compute is always float32 (decoded per batch).')
     # two-phase curriculum
     p.add_argument('--phase2_start',    type=int,   default=100,
                    help='epoch at which SINDy losses activate (0 = from start)')
@@ -51,21 +56,57 @@ def parse_args():
     return p.parse_args()
 
 
+def decoder_for(dtype):
+    """Return a fn mapping a stored batch to a float32 compute tensor."""
+    if dtype == 'uint8':
+        return lambda t: t.float() / 255.0     # [0,255] -> [0,1]
+    return lambda t: t.float()                 # float16 / float32 -> float32
+
+
+def fits_on_gpu(n, dim, itemsize, reserve_mib=350):
+    """True if both data tensors (X + Xdot) plus a working-memory reserve fit
+    in currently-free VRAM. Reserve covers model, optimizer, per-batch
+    activations and fragmentation."""
+    if device != 'cuda':
+        return False
+    free, _ = torch.cuda.mem_get_info()
+    need = 2 * n * dim * itemsize               # X + Xdot at storage dtype
+    fits = need + reserve_mib * 1024**2 < free
+    max_n = int((free - reserve_mib * 1024**2) / (2 * dim * itemsize))
+    print(f"  VRAM check: data needs {need/1024**2:.0f} MiB, "
+          f"{free/1024**2:.0f} MiB free, max ~{max_n:,} samples fit resident")
+    return fits
+
+
 def make_loaders(X, Xdot, batch_size, val_frac=0.1):
-    X_t  = torch.from_numpy(X).float().to(device)
-    Xd_t = torch.from_numpy(Xdot).float().to(device)
-    ds   = TensorDataset(X_t, Xd_t)
+    X_t  = torch.from_numpy(X)                  # keep storage dtype
+    Xd_t = torch.from_numpy(Xdot)
+    n, dim = X.shape
+
+    resident = fits_on_gpu(n, dim, X_t.element_size())
+    if resident:
+        X_t, Xd_t = X_t.to(device), Xd_t.to(device)
+        print(f"  -> data resident on {device} (no per-batch transfer)")
+    elif device == 'cuda':
+        print(f"  -> data kept on CPU, batches streamed to GPU")
+
+    ds = TensorDataset(X_t, Xd_t)
     n_val   = round(len(ds) * val_frac)
     n_train = len(ds) - n_val
     train_ds, val_ds = torch.utils.data.random_split(ds, [n_train, n_val])
-    return (DataLoader(train_ds, shuffle=True,  batch_size=batch_size),
-            DataLoader(val_ds,   shuffle=False, batch_size=batch_size))
+    pin = (not resident) and device == 'cuda'   # pin only when streaming
+    return (DataLoader(train_ds, shuffle=True,  batch_size=batch_size, pin_memory=pin),
+            DataLoader(val_ds,   shuffle=False, batch_size=batch_size, pin_memory=pin))
 
 
-def train_epoch(model, optimizer, loader, alpha1, alpha2, alpha3):
+def train_epoch(model, optimizer, loader, alpha1, alpha2, alpha3, decode):
     model.train()
     totals = {}
+    non_block = device == 'cuda'
     for X_b, Xd_b in loader:
+        # move (no-op when resident) then decode storage dtype -> float32
+        X_b  = decode(X_b.to(device, non_blocking=non_block))
+        Xd_b = decode(Xd_b.to(device, non_blocking=non_block))
         xtilde, xtildedot, z, zdot, zdot_hat = model(X_b, Xd_b)
         tot, ld = model.loss_function(
             X_b, Xd_b, xtilde, xtildedot, zdot, zdot_hat, model.XI,
@@ -80,11 +121,14 @@ def train_epoch(model, optimizer, loader, alpha1, alpha2, alpha3):
     return {k: v / n for k, v in totals.items()}
 
 
-def val_epoch(model, loader, alpha1, alpha2, alpha3):
+def val_epoch(model, loader, alpha1, alpha2, alpha3, decode):
     model.eval()
     total, n = 0.0, 0
+    non_block = device == 'cuda'
     with torch.no_grad():
         for X_b, Xd_b in loader:
+            X_b  = decode(X_b.to(device, non_blocking=non_block))
+            Xd_b = decode(Xd_b.to(device, non_blocking=non_block))
             xtilde, xtildedot, z, zdot, zdot_hat = model(X_b, Xd_b)
             tot, _ = model.loss_function(
                 X_b, Xd_b, xtilde, xtildedot, zdot, zdot_hat, model.XI,
@@ -131,10 +175,11 @@ def main():
     print(f"Device: {device}")
 
     # ── Data ──────────────────────────────────────────────────────────────────
-    print(f"\nGenerating data (n_ics={args.n_ics})...")
-    X, Xdot = generate_dataset(n_ics=args.n_ics)
-    print(f"  X: {X.shape}  Xdot: {Xdot.shape}")
+    print(f"\nGenerating data (n_ics={args.n_ics}, dtype={args.data_dtype})...")
+    X, Xdot = generate_dataset(n_ics=args.n_ics, dtype=args.data_dtype)
+    print(f"  X: {X.shape}  Xdot: {Xdot.shape}  ({X.dtype})")
 
+    decode = decoder_for(args.data_dtype)
     train_loader, val_loader = make_loaders(X, Xdot, args.batch_size)
     input_size = X.shape[1]
     del X, Xdot
@@ -164,8 +209,8 @@ def main():
         else:
             a1, a2 = args.alpha1, args.alpha2
 
-        train_ld = train_epoch(model, optimizer, train_loader, a1, a2, args.alpha3)
-        val_loss = val_epoch(model, val_loader, a1, a2, args.alpha3)
+        train_ld = train_epoch(model, optimizer, train_loader, a1, a2, args.alpha3, decode)
+        val_loss = val_epoch(model, val_loader, a1, a2, args.alpha3, decode)
 
         for k in loss_log:
             loss_log[k].append(train_ld[k])
